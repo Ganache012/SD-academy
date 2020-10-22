@@ -1,0 +1,150 @@
+# Goorm_LEVEL 문제 풀이
+
+## Min 함수
+[문제]: 함수의 정의와 호출을 실습할 수 있는 아주 간단한 문제입니다. 서로 다른 두 정수를 비교하여 더 작은 값을 출력해내는 Min함수를 작성하시면 됩니다.
+```
+# -*- coding: utf-8 -*-
+# UTF-8 encoding when using korean
+
+def min(a, b):
+	mini = 0
+	if (a > b):
+		mini = b
+	else:
+		mini = a
+	return mini
+		
+		# print(mini)
+
+minimum = input()
+c,d = minimum.split() #한 줄에 두 변수를 입력하므로 나눠야 한다.
+mini = min(int(c), int(d))
+print(mini)
+
+```
+
+## 네 수의 곱
+[문제]: 네 정수를 입력받아 곱을 구하는 프로그램을 작성하려고 합니다. 이 문제의 핵심은 여러분의 함수에 대한 이해도를 확인하고 응용하는
+문제입니다. 곱셈을 수행하는 함수를 중첩하여 호출하는 프로그램을 작성하십시오.
+hint: mum(mul(int a, intb), mul(int c, intd));
+
+```
+# -*- coding: utf-8 -*-
+# UTF-8 encoding when using korean
+
+#내 답
+#def multiple(a = 1, b = 1, c = 1, d = 1):
+#	mul = a * b * c * d
+#	return mul
+
+#user_input = input()
+#a,b,c,d = user_input.split()
+
+#mul = multiple(multiple(int(a), int(b)),multiple(int(c), int(d)))
+
+#print(mul)
+
+# 다르게 푸는 방법
+
+def multiple(a, b, c, d):
+	return a * b * c * d
+
+user_input = input()
+#user_input = user_input.split(sep = ' ')
+a,b,c,d = user_input.split(sep = ' ') #리스트를 이렇게 받아 올 수도 있다.
+a,b,c,d = int(a), int(b), int(c), int(d)
+
+ret = multiple(a, b, c, d)
+print(ret)
+
+```
+## 은행 예금 이자 구하기
+[문제]: 예금이란 은행에 돈을 맡기는 것을 말합니다. 구름이는 모아둔 돈을 은행에 특정 기간(년)동안 계약하고 맡겨놓을 생각인데요.
+구름이는 계약이 끝난 후 원금에 계약을 한 시점의 이자율에 맞게 복리로 계산된 이자액이 추가된 상환금을 받게 됩니다.
+상환금을 계산하는 프로그램을 작성해 주세요
+```
+# -*- coding: utf-8 -*-
+# UTF-8 encoding when using korean
+# 원금, 이자율, 예금_y_count
+# 복리 계산 방법
+# 원금 100만원, 연이율 10%, 기간 3년
+# 원금 * (1 + 연이율) ** 기간
+# 원금 * (1 + 연이율 * 0.01) ** 기간
+
+#def bank_money(a = 1, b = 0, c = 1):
+	# a: 원금, b: 이자율, c:예금 년수
+#	return a*(1+b*0.01)**c
+
+#람다로 bank_money표현하기
+ret = (lambda 원금, 이자율, 예금_y_count:원금*(1+이자율*0.01)**예금_y_count)
+
+user_input = input()
+원금, 이자율, 예금_y_count = user_input.split(sep = ' ')
+
+bank = ret(float(원금), float(이자율), float(예금_y_count))
+print(format(bank,".2f"))
+#print('{0:.02f}'.format(bank)) #위와 같은방법이다, round()는 소숫점 맨끝자리가 0이면 출력을 하지 않으므로 format을 사용했다.
+
+```
+## 숫자 뒤집기
+[문제]: 양의 정수가 입력되면 이 정수를 거꾸로 출력하는 프로그램을 작성하십시오.
+예를 들어 7890이 입력되면 987이 출력되어야 합니다.(0987을 출력하지 않도록 주의)
+```
+# -*- coding: utf-8 -*-
+# UTF-8 encoding when using korean
+
+#def dynamic(list_):
+#	d = reversed(list_)
+#	return d
+	
+#list_ = list(input())
+#d = dynamic(list_)
+#d = ''.join(d)
+#d = int(d)
+#print(d)
+
+# 다른방법
+#user_input = input()
+#user_input = list(user_input)
+#user_input.reverse()
+#user_input = ''.join(user_input)
+#user_input = int(user_input)
+#print(user_input)
+
+# 다른방법2
+#def reverse(arg1):
+#	length = len(arg1)
+#	tmp = []
+#	for idx in range(-1, -(length+1), -1):
+#		tmp.append(arg1[idx])
+#	return tmp
+
+#user_input = input()
+#ret = reverse(user_input)
+#print(int(''.join(ret)))
+
+# 정수만 사용해서 숫자 뒤집기(방법 3)
+def reverse(arg1):
+	q = arg1
+	tmp = []
+	while not(q == 0):
+		r = q % 10
+		q = int(q / 10)
+		tmp.append(r)
+	return tmp
+
+user_input = input()
+ret = reverse(int(user_input))
+#ret_ = list(map(str, ret))
+#print(''.join(ret_))
+
+#다른 방법(상단의 reverse함수 필요)
+n = len(ret)
+final = 0
+for ele in ret:
+	n -= 1
+	print('{} * 10 ** {} = {}'.format(ele, n, ele * 10 ** n))
+#print(final)
+
+```
+

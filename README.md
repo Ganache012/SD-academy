@@ -22,3 +22,5 @@ SD아카데미 실습
 20201029_Python 재귀 마지막: 합병정렬(Merge sort)를 구현하고, 병합할 순서에 버블 정렬을 이용해 병합 시켜보기(미완)
 
 20201103_Python 그래프 (기본) - tree(이중 트리 구조) 및 DFS탐색, BFS탐색방법 (백준 문제풀이)
+
+20201104_SSH 원격 설정하기: vsc와 goormide의 Python Container를 이어준다. (요:ssh_config파일 작성)

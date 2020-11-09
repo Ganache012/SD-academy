@@ -1,0 +1,71 @@
+/*상속: inheritance
+inline은 width값을 가질 수 없다.
+inline-block은 inline기반이면서 block 기반의 속성을 가질 수 있다.
+*/
+.list-unstyled li {
+    border: 2px dashed red;
+    display: inline-block;
+    width: 100px;
+  }
+  
+  ol li {
+    border: 2px dashed red;
+    width: 100px;
+  }
+  
+  .column1 {
+    width: 30%;
+    float: left;/*left, 또는 right를 설정*/
+  }
+  
+  .column2 {
+    width: 30%;
+    float: left;
+  }
+  
+  .column3 {
+    width: 30%;
+    float: left;
+  }
+  
+  .footer {
+    clear: both;
+  }
+  
+  .header {
+    background-color: #006699;
+    color: #FFFFFF;
+    font-family: consolas, "나눔고딕코딩", serif;
+    position: relative;
+  }
+  
+  .container {
+    padding: 20px;
+    padding-bottom: 20px;
+  }
+  
+  .title {
+    position: absolute; /* default: static */
+    top: -10px;
+    left: 50px;
+  }
+  
+  .span {
+    position: absolute;
+    width: 250px;
+    top: 30px;
+    left: 250px;
+  }
+  
+  .list {
+    margin-right: 50px;
+    text-align: right;
+  }
+  
+  .list-item {
+    display: inline-block;
+    text-align: center;
+    width: 200px;
+    font-size: 20px;
+    text-transform: uppercase;
+  }

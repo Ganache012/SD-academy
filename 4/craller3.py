@@ -26,7 +26,7 @@ data = {
     'locale': 'ko_kr',
     'url': 'https://www.naver.com',
     'id': 'zsw97',
-    'pw': 'veetoveen22'
+    'pw': '*********' #접속하실 때는 직접 비밀번호를 data안에 입력해주시면 됩니다.
 }
 
 response = requests.post('https://nid.naver.com/nidlogin.login', data=data)

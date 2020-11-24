@@ -137,11 +137,15 @@
 
 ## 3. DCL(Data Control Language) : 데이터 제어어
 
+- 권한, 트랜잭션, ... 에 사용
 
 # CSV(Comma Seperate Value)
 - 각각의 필드(컬럼)를 콤마로 형태로 구분된 텍스트 파일
+- 구분자를 |, tab, space, ;, ..로 사용 할 수 있다.
+  - 실제 필드의 값에 콤마가 들어가는 경우
 - 엑셀하고는 다름
 - 엑셀은 바이너리 형태, 다만 CSV는 액셀에서 지원 가능한 형태
+- 데이터 분석시에 가장 많이 사용되는 형태
 
 ```
     SELECT
@@ -150,4 +154,76 @@
         round(windspeed,2) as "풍속",
         -- sum(cnt) as "자전거 대여수" 
         FROM hour WHERE dteday='2011-01-01';
+```
+
+# 뷰(View)
+
+- 가상테이블
+```
+  CREATE VIEW myView
+AS
+SELECT 
+	   substr(dteday, 1, 4) as "년도",
+	   substr(dteday, 6, 2) as "월",
+	   substr(dteday, 9, 2) as "일",
+	   mnth as "월",
+	   hr as "시간",
+	   temp as "온도",
+	   round(windspeed, 2) as "풍속",
+	   cnt as "자전거 대여수"
+	   FROM hour WHERE dteday="2011-01-01";
+```
+
+```
+  SELECT * FROM myView
+```
+
+- 복잡한 쿼리를 단순화 할 수 있다.
+- 보안상 적합하다.(조회를 제외한 다른 작업을 할 수 없다.)
+  - DBMS마다 차이가 존재하다.(수정, 삭제가 가능할 수도 있다.)
+
+# 인덱스(index)
+- 데이터베이스에서: 검색을 빠르게 하기 위한 용도로 사용
+  - trade-off가 존재하기 때문에, 항상 좋지는 않다.
+  - 컬럼을 index로 지정하게 될 경우 생기는 문제점:
+    - 1. 데이터의 양이 아주 많은 경우에 데이터가 추가되거나
+    - 2. 데이터가 삭제되는 경우에 index도 동시에 업데이트가 이루어진다.
+    - 3. 결국 시간이 더 오래걸리는 단점이 발생한다.
+
+```
+  CREATE INDEX index_name ON table_name(column_name, ...)
+```
+
+- 인덱스를 생성하든 하지않든 검색은 차이가 없다.
+- 그냥 select 쿼리로 조회하면 인덱스가 있는경우 자동으로 참조한다.
+- 따라서 그냥 만들어놓고 사용하면 됨.
+- 유니크 속성의 칼럼인 경우 자동으로 인덱스를 생성하는 경우도 있다.
+
+# 트리거(trigger)
+- 방아쇠 같은 의미
+- 어떤 쿼리가 실행된 경우 해당 쿼리에 대한 트리거를 설정
+- 쿼리가 방아쇠가 되어서 연쇄적으로 설정된 다른 쿼리를 자동으로 실행한다.
+
+```
+  CREATE TRIGGER trigger_name BEFORE|AFTER QUERY OF
+  column_name ON table_name
+  BEGIN 
+    SQL QUERY
+  END;
+```
+
+# 정규 표현식(Regular Expression, regx)
+- 문자열을 표현할 수 있는 패턴
+- 거의 모든 시스템이 동일하게 정규식을 적용
+
+```
+  .: 임의의 한 문자
+  []: 문자 그룹
+  ^: 라인에서 시작 문자
+  [^]: 부정의 의미를 나타냄
+  $: 라인에서 끝나는 문자
+  (): 문자열
+  *: 반복(0번 이상)
+  ?: 0또는 1화 매칭
+  {}: 매칭되는 횟수 {min, max}
 ```

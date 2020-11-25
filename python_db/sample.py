@@ -12,35 +12,31 @@ from fake_useragent import UserAgent
 import time
 
 headers = {
-   'User-Agent' : UserAgent().chrome
+    'User-Agent' : UserAgent().chrome
 }
 
-response = req.get('https://joongang.joins.com/', headers = headers)
+response = req.get('https://joongang.joins.com/', headers=headers)
 soupDocument = bs(response.text, "html.parser")
 
-#url이 중복되므로 nth-child(1)을 붙여준다.: 뉴스 목록 보기
 urls = soupDocument.select('div.type1 ul.list_vertical a:nth-child(1)')
 
-#for url in urls:
-#    print(url['href'])
-
-# 뉴스 본문
-chrome_driver = 'C:\Zeon\crawling\chromedriver.exe'
+chrome_driver = 'C:\h\chromedriver.exe'# 환경에 맞게 고쳐주세요
 browser = webdriver.Chrome(chrome_driver)
 
-# comment_list 요소가 로딩 될 때까지 대기
+browser.get(urls[0]['href'])
+browser.get(urls[1]['href'])
+browser.get(urls[2]['href'])
+browser.get(urls[3]['href'])
+browser.get(urls[4]['href'])
 
-WebDriverWait(browser, 10). \
-until(EC.presence_of_element_located(
-    (By.CSS_SELECTOR, '.comment_list')))
-
+WebDriverWait(browser, 10).\
+    until(EC.presence_of_element_located((By.CSS_SELECTOR, '.comment_list'
+    )))
 src = browser.page_source
 soupComment = bs(src, "html.parser")
 
-comments = soupComment.select( 'div.comment_list \
-ul.list p.content')
-
+comments = soupComment.select('div.comment_list ul.list p.content')
 for comment in comments:
     print(comment.get_text())
 
-time.sleep(300)
+time.sleep(10)

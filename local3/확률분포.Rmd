@@ -1,0 +1,111 @@
+---
+title: "확률분포"
+output: html_notebook
+---
+```{R}
+library(ggplot2)
+```
+
+- 자료 읽어오기
+```{R}
+dice <- read.table("./dice.txt", col.names="number")
+```
+
+```{R}
+dice
+```
+
+```{R}
+length(dice$number)
+```
+
+- 주사위를 1000번 던져서 관측한 수들이 기록되어 있다.
+```{R}
+ggplot(data=dice, aes(x=number)) +
+  geom_histogram() +
+  labs(x="number", y="count")
+```
+
+- 실제로도 비슷한 정도로 관측되었음을 확인할 수 있다.
+```{R}
+table(dice)
+```
+
+```{R}
+pmf <- data.frame(x=1:6, density=1/6)
+View(pmf)
+```
+
+```{R}
+# 확률 질량 함수수
+pmf <- data.frame(x=1:6, density=1/6)
+ggplot(data=dice, aes(x=number)) +
+  geom_histogram(aes(y=..count../nrow(dice))) +
+  geom_bar(data=pmf, aes(y=..count../nrow(pmf)), fill='red', alpha=0.5, width=0.2) +
+  labs(x="number", y="count")
+```
+
+## 정규분포
+- 반응변수가 실수 값을 가지거나, 연속형 확률변수인 경우에 주로 사용되며,
+- 오차항은 정규분포로 가정한다.
+
+### 확률분포로부터 표본 추출하기
+- rnorm()
+- 평균이 다른 두 개의 정규분포로부터 1000개의 표본을 추출
+
+```{R}
+set.seed(1)
+norm1 <- rnorm(1000, mean=0)
+norm2 <- rnorm(1000, mean=3)
+```
+
+```{R}
+hist(norm1)
+```
+
+```{R}
+hist(norm2)
+```
+- 확률밀도함수도 같이 그려보면
+```{R}
+temp <- seq(-4, 4, length=1000)
+hist(norm1, prob=T)
+points(temp, dnorm(temp, mean=0), type='l', col='red')
+points(density(norm1), type='l', col='blue')
+```
+
+- 산점도
+```{R}
+norm <- data.frame(norm1=norm1, norm2=norm2)
+g <- ggplot(data=norm, aes(x=norm1, y=norm2))
+g + geom_point()
+```
+
+```{R}
+g +
+  geom_point() +
+  stat_density2d(aes(fill=stat(level), alpha=..level..), geom='polygon') +
+  geom_density2d()
+```
+
+- 실습
+1. PM10(미세먼지 농도)에 대한 히스토그램을 그려보고
+2. 해당 히스토그램의 미세먼지 농도의 밀도함수를 추가해 보자
+
+```{R}
+load('./pmkw.Rdata')
+
+ggplot(data=pmkw, aes(x=PM10)) +
+  geom_histogram()
+
+hist(pmkw$PM10, prob=T)
+points(density(pmkw$PM10), type='l', col='red)
+```
+
+```{R}
+set.seed(100)
+x <- rnorm(1000, mean=1, sd=2)
+
+mean(x)
+sd(x)
+```

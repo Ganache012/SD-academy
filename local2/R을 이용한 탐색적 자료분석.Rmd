@@ -1,0 +1,111 @@
+---
+title: "R을 이용한 탐색적 자료 분석"
+output: html_notebook
+  html_document:
+    df_print: paged
+---
+
+#1. R시각화
+- ggplot
+
+```{R}
+install.packages("ggplot2")
+```
+
+```{R}
+library(ggplot2)
+```
+
+- ggplot 이용해서 그려보기
+```{R}
+ggplot(data = iris, aes(x=Sepal.Length, y=Sepal.Width)) +
+  geom_point()
+```
+
+```{R}
+# 변수를 정의
+# 변수 = 값
+# 변수 <- 값
+
+iris_plot <- ggplot(data=iris, aes(x=Sepal.Length, y=Sepal.Width))
+```
+
+``{R}
+iris_plot + geom_line()
+```
+
+```{R}
+iris_plot + geom_point(mapping = aes(color=Species))
+```
+
+- R에서 파일 로드하는 방법
+- pandas read_csv를 R에서 실행하는 방법
+```{R}
+load("./pmkw.Rdata")
+pmkw
+```
+
+- 기술통계를 이용한 분석
+```{R}
+print(length(pmkw$PM10))
+print(length(pmkw$PM25))
+```
+
+``{R}
+mean(pmkw$PM10)
+```
+
+```{R}
+mean(pmkw$PM25)
+```
+
+```{R}
+sd(pmkw$PM10)
+```
+
+```{R}
+min(pmkw$PM10)
+max(pmkw$PM25)
+```
+
+```{R}
+summary(pmkw$PM25)
+```
+
+```{R}
+summary(pmkw$PM10)
+```
+
+- 그림 그리기
+
+초 미세먼지에 대해서
+
+```{R}
+hist(pmkw$PM25)
+```
+```{R}
+ggplot(data=pmkw, aes(x=PM25)) + 
+  geom_histogram() +
+  labs(title="Histogram of PM2.5") +
+  labs(x="PM25", y="Count")
+```
+```{R}
+ggplot(data=pmkw, aes(x=PM25)) +
+  geom_histogram(fill='red', alpha=0.5) +
+  geom_histogram(aes(x=PM10), fill='blue', alpha=0.5)
+```
+
+```{R}
+plot(data.frame(PM25 = pmkw$PM25, PM10=pmkw$PM10, CO=pmkw$CO, O3=pmkw$O3, SO2=pmkw$SO2, NO2=pmkw$NO2))
+```
+
+```{R}
+ggpairs(pmkw, columns=c('PM25', 'PM10', 'CO'))
+```
+
+
+```{R}
+cor(pmkw$PM10, pmkw$PM25)
+```
+
+

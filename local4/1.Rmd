@@ -1,0 +1,256 @@
+---
+title: "R을 이용한 최적화 과정"
+output: html_notebook
+---
+
+```{R}
+library(ggplot2)
+library(GGally)
+```
+
+```{R}
+install.packages("lubridate")
+library(lubridate)
+```
+# R의 최적화 관련 함수
+
+## L1 loss
+
+```{R}
+studenth <- c(169, 166.5, 171.6, 177.5, 169.8, 175.4, 176, 
+              172.1, 172.7, 173, 183.1, 180.5, 173.6, 174.5, 
+              174.6, 165.8, 170, 176.4, 171.7, 174)
+# loss function
+L1loss <- function(m) {
+  sum(abs(studenth - m))
+}
+```
+
+- 정의한 손실함수를 그래프로 그려보면
+```{R}
+temp <- seq(165, 180, length = 1000)
+
+L1loss(temp)
+```
+```{R}
+Vectorize(L1loss)(temp)
+```
+- 정의한 손실함수를 그래프로 그려보면
+```{R}
+value <- Vectorize(L1loss)(temp)
+
+ggplot(data=data.frame(x=temp, loss=value), aes(x=x, y=loss)) +
+  geom_line()
+```
+
+```{R}
+optimize(L1loss, interval=c(160, 180))
+```
+- minimum값은 손실함수가 최솟값이 되는 값
+- objective는 손실함수의 최솟값을 의미한다.
+
+```{R}
+L2loss <- function(m) {
+  sum((m - studenth)^2)
+}
+```
+
+- 마찬가지로 손실함수를 그려보면
+```{R}
+temp <- seq(165, 180, length = 1000)
+value <- Vectorize(L2loss)(temp)
+
+ggplot(data=data.frame(x=temp, loss=value), aes(x=x, y=loss)) +
+  geom_line()
+```
+
+```{R}
+optimize(L2loss, interval=c(160, 180))
+```
+
+# 2번쨰 실습
+
+# 예측 모형에 대한 최적화 과정
+
+## 미세먼지와 차량통행 데이터
+- 미세먼지 농도와 차량의 통행량 사이에 관계가 있는가
+- 회귀모형을 적용해서 확인해보기.
+(pmcar.R다운받기)
+
+```{R}
+load("./pmcarkw.Rdata")
+```
+
+```{R}
+ggpairs(pmcarkw, columns = c('PM25', 'PM10', 'ncar', 'CO'))
+```
+
+- 손실함수를 어떻게 정의할 것인가? 선형적으로 가정
+- 차가 많이 다니는 날에 (통행량이 많은 날)에 미세먼지 농도 또한 높아질 것인가?
+   - 즉, 통행량이 많은 날에는 미세먼지 농도 또한 높을 것이라고 가정
+- 반응변수 y: 미세먼지 농도
+- 입력변수 x: 차량 통행량
+
+```{R}
+y <- pmcarkw$PM10
+x <- pmcarkw$ncar
+
+L1 <- function(beta) {
+  yhat = beta[1] + beta[2] * x
+  return (sum(abs(y - yhat)))
+}
+
+L2 <- function(beta) {
+  yhat = beta[1] + beta[2] * x
+  return(sum((y-yhat)^2))
+}
+```
+
+- optim()함수를 통해 각 경우의 회귀계수를 추정
+- 최적화 함수: optim
+```{R}
+l1optim <- optim(par = c(1,1), L1)
+l1optim
+```
+```{R}
+l2optim <- optim(par = c(1,1), L2)
+l2optim
+```
+
+```{R}
+ggplot(data=pmcarkw, aes(x=ncar, y=PM10)) +
+  geom_point() +
+  geom_abline(aes(colour = "LAD", intercept=l1optim$par[1], slope=l1optim$par[2])) +
+  geom_abline(aes(colour="LSE", intercept=l2optim$par[1], slope=l2optim$par[2]))
+```
+
+- lm()
+- regression을 지원하는 R의 또다른 라이브러리 입니다.
+- 모형, 자료 등을 입력변수로 지정하면
+- 최소제곱추정량을 제시해준다.
+
+```{R}
+lm_result = lm(PM10 ~ ncar, data=pmcarkw)
+```
+
+```{R}
+ggplot(data=pmcarkw, aes(x=ncar, y=PM10)) +
+  geom_point() +
+  geom_abline(aes(colour="LAD", intercept = l1optim$par[1], slope=l1optim$par[2])) +
+  geom_abline(aes(colour="LSE", intercept = l2optim$par[1], slope=l2optim$par[2])) +
+  geom_abline(aes(colour = "lm()", intercept = lm_result$coefficients[1], slope=lm_result$coefficie[2]))
+```
+
+- lm()함수를 이용한 결과는 다음과 같다
+  - b0(intercept) = -9.0.307001, b1 = 0.0003614정도로 추정되었다.
+  - 이 결과는 앞의 L2손실을 이용한 optim()함수를 사용한 결과와는 다르게 나왔다.
+  - optim()함수로 계산한 최소값이 실제 최소값이 아닌 local minimum(극소)이기 때문이다.
+  - optim()함수의 초기값을 (1,1)이 아닌 (0,0)으로 변경하면 동일한 값을 확인할 수 있다.
+
+- lm()함수를 사용해서 전체 변수에 대한 회귀계수를 확인해 봅시다.
+- 반응변수 y(PM10)는 그대로 두고, day변수를 제외한 모든 변수를 사용해서 회귀모형을 적합
+
+```{R}
+lm_total_result <- lm(PM10 ~. -day, data=pmcarkw)
+lm_total_result
+```
+
+- 예측(predict)
+```{R}
+new_ncar <- data.frame(ncar=10000) # 하루통행량이 10000인 어느날
+predict(lm_result, newdata = new_ncar, type='response')
+```
+
+### Scailing Problem
+- 차량 통행과 미세먼지 농도 사이에는 정말 아무런 관계가 없을까?
+- 회귀계수가 0에 가깝게 나왔기 때문에, 그렇게 볼 수도 있다.
+- 농도 수치와 차량 통행량의 사이에는 단위가 굉장히 큰 것 같지 않나요?
+- 미세먼지 농도와 차량 통행량으 단위가 다르기 때문에 회귀계수가 작은 것처럼 보이게 된다.
+  - 실제로 미세먼지 종도가 50정도라면 굉장히 높은 수치인데
+  - 차량 통행량에 비하면 아주 낮은 수치가 된다.
+- 자료의 평균을 빼주고(Centering) 표준편차로 나눠주는 (scaling)과정을 통해 문제를 해결할 수 있다.
+- R의 scale()함수를 이용할 수 있다.
+
+```{R}
+scaledY = scale(pmcarkw$PM10)
+scaledX= scale(pmcarkw$ncar)
+
+lm_scaled_result <- lm(scaledY ~ scaledX)
+lm_scaled_result
+```
+### 회귀계수란?
+- 찾으려는 모수 정도로만 얘기를 했었다.
+- 회귀계수가 가지는 의미는
+  - 입력변수x가 반응변수y에 미치는 영향 정도로 생각을 해볼 수 있다.
+  - 즉, 입력변수 x가 1 증가할 때 마다, 회귀계수만큼 영향이 증가한다고 볼 수 있다.
+  - 만일, 회귀계수가 음수라면 입력변수 x가 1증가할 때마다 회귀계수만큼 영향이 감소한다고 볼 수 있다.
+- 전체 데이터에서 회귀모형에 적합한 결과를 보면
+  - ncar 변수의 회귀 계수가 ncar하나만 가지고 회귀모형을 적합했을 때와 전체를 가지고 적합을 한 경우
+  - 회귀 계수가 다르게 계산됨을 확인했다.
+  - 다변수 회귀분석을 진행하는 경우 각 변수들은 반드시 독립적이어야 한다.
+  - 독립적이라면 변수와 변수 사이의 관계가 전혀 없어야 한다. 즉 변수가 다른 변수에 영향을 끼치면 안됀다는 것을 의미
+  > 다변수 회귀분석인 경우 회귀분석과 회귀계수의 해석은 신중하게 진행되어야 한다.
+  > 어차피 우리가 확인하는 값들은 전부 수치적으로 계산된 값일 뿐
+  > 실제 의미를 전혀 반영하지 못한다(거짓말, 새빨간 거짓말, 그리고 통계)
+  
+
+# 선형회귀모형의 특징
+- 파이썬을 통한 선형회귀 수업에서도 다시 한 번 다룰 겁니다.
+- 선형회귀모형과 같은 경우 해석이 아주 쉽고, 심지어 최적의 모수를 직접 계산할 수도 있다.
+- 그리고 직관적으로 그 구조를 파악하기가 쉽다는 장점이 있다.
+- 때문에 널리 사용이 된다.
+- 많은 통계적 모형들이 선형회귀모형을 응용한 형태로 사용을 한다.
+  - 예를 들면 딥러닝 같은 경우 선형회귀모형에 활성함수를 씌운 것을 겹겹이 쌓아올려서 동작하는 구조
+  - 그래서, 딥러닝을 그냥 선형회귀라고 부르는 사람들도 있다.
+  - 다만, 모수를 많이 늘려서 정확도를 높이는 방법이 딥러닝이다.
+- 선형회귀모형은 통계적 모형 에서도 가장 기본적이면서 가장 중요한 모형이라고 볼 수 있다.
+
+# 실습
+1. 탐색적 자료 분석을 통해서 CO, NO2, ncar 변수와 관계를 확인해보자.
+2. 단순선형회귀 모형을 이용해 CO 변수와 ncar변수 사이의 관계를 확인해보자.
+3. 선형회귀모형을 통해 CO와 NO2, ncar 변수 사이의 관계를 확인해보자.
+4. 차량통행량이 80000, NO2 농도가 0.03 정도라면 CO농도는 어느 정도로 예측될 수 있는지 확인해보자.
+
+# 실습문제 풀이
+1. 탐색적 자료분석을 통해 CO, NO2, ncar 변수들의 관계를 확인해보자
+
+```{R}
+# 리눅스에서 파이프 라인과 같은 형태로 이해
+# 앞에서 실행한 명령의 결과 다음 명령어(함수)의 인자로 전달
+# ps -ef | grep mysql
+# pmcarkw %>% select(CO, NO2, ncar)
+library(tidyverse)
+pmcarkw %>%
+  select(CO, NO2, ncar) %>%
+  cor()
+#round(cor(pmcarkw[,-1]), 2)
+```
+```{R}
+ggpairs(pmcarkw, columns=c('CO', 'NO2', 'ncar'))
+```
+
+2. 단순선형회귀모형을 이용해 CO 변수와 ncar 변수 사이의 관계를 확인해보자
+```{R}
+pmcarkwScaled = data.frame(scale(pmcarkw))
+result <- lm(CO ~ ncar,data=pmcarkwScaled)
+result
+```
+
+```{R}
+ggplot(data=data.frame(scale(pmcarkw)), aes(x=ncar, y=CO)) +
+  geom_point() +
+  geom_abline(aes(colour = "lm()", intercept=result$coefficients[1], slope=result$coefficients[2]))
+```
+3. 선형회귀모형을 통해 CO, NO2, ncar 변수사이의 관계를 확인해보자.
+```{R}
+result1 <- lm(CO ~ ncar +NO2, data=pmcarkw)
+result1
+
+result2 <- lm(CO ~ ncar +NO2, data=pmcarkwScaled)
+result2
+```
+
+
+
+
+

@@ -1,0 +1,361 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+# 지도 학습 방식
+- 정답을 알고 있을 때
+  - 반응변수 Y를 이미 알고 있을 때...
+  - 반응변수 Y가 이미 데이터에 있을 때....
+  - 온도 x에 따른 아이스크림 판매량(Y), 전기요금(Y) 등등
+  - 스팸 메일도 마찬가지로 스팸 여부를 알고 있었다.
+1. 예측 모델
+  - 손실함수(다항함수에 대한 손실함수)
+2. 분류 모델
+- 1로 분류한 확률과
+- 0으로 분류한 확률들의 총합
+- 분류모델이지만 선형회귀와 동일한 형태로 문제를 풀어볼 수 있다.
+
+# 비지도학습 방식
+- 정답을 모르고 있을 때
+  - 반응변수 Y가 없을 때
+- 예를들면,...
+  - 메이저리크(MLB)의 투수에 대한 데이터를 입력을 했더니 기계가 알아서 분류를 해주는데
+  - 누구는 선발로, 누구는 중간계투로... 아주 잘 묶인다.
+  - 정말 사기성이 아주 짙은 말들이에요
+  
+1. 클러스터링
+
+
+# 지도 + 비지도 = semi supervised
+- 지도학습 방식의 단점
+  - 스팸 메일에 대한 분류 모델을 만들고 싶다면
+  - 실제로는 수집된(관찰된)메일들에 대해서 여러분들이 직접 레이블링 해야 한다.
+  - 수집된 메일을 보고 얘는 스팸인지 아닌지 직접 확인하고 레이블링 작업 해줘야 한다.
+    - 우리가 이미 레이블링된 데이터를 사용하고 있어서 그렇지 현실에선 그렇지 않음.
+
+- 사실 정확도가 제일 높은 방법이 지도 학습 방법
+- 레이블링 하는 작업에 들어가는 비용이 너무 크다.
+  - HTTP헤더의 악의적인 부분을 판단하려면 그 분야의 지식이 있어야 한다.
+- 
+
+> 예를 들면 HTTP 헤더를 보고 악의적인 요청인지 아닌지를 판단하는 그런 모델을 만드는 작업
+> 국가정보자원관리원, 금융보안원, ...등에서 이런 작업을 한다.
+
+1. HTTP 요청만 수집을 한다.
+2. 수집된 내용을 가지고 직접 분류한다.(악의적인지 아닌지)
+  - 하루8시간 기준으로, 하루 종일 분류 해봐야 1000개도 힘들다.
+3. 금보원 같은 경우도 그렇고, 국가정보자원관리원도 그렇고
+
+- 성장 클리닉
+
+# 현실적으로...
+- 충분한(?) 데이터 셋을 확보하는 것도 쉽지 않다.
+- 충분한 데이터 셋을 보유하고 있다고 하더라도 레이블링 이라는 문제는 남아 있고
+- 비지도 방식은 충분힌 정확도를 보여주지 못한다.
+
+
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{R}
+library(klaR)
+library(ggplot2)
+library(tidyverse)
+library(reshape2)
+library(MASS)
+library(caret)
+library(leaps)
+```
+
+
+```{R}
+spam = read.table('./R/spam.data')
+```
+
+```{R}
+set.seed(100)
+train_size <- nrow(spam) * 0.8
+train_index <- sample(1:nrow(spam), train_size, replace = F)
+spam_train <- spam[train_index,]
+spam_test <- spam[-train_index, ]
+```
+
+```{R}
+spam_logit <- glm(V58 ~ ., data=spam_train, family='binomial'(link='logit'))
+
+spam_train$V58 = as.factor(spam_train$V58)
+spam_nb <- NaiveBayes(V58 ~ ., data=spam_train, usekernel=T)
+```
+
+- usekernel 옵션은 밀도함수와 관련된 옵션
+- true이면 주어진 데이터에서 적당한 밀도함수를 추정
+- false(default)이면, 정규분포에서 적당한 분포를 추정
+
+
+```{R}
+spam_logit_predict <- predict(spam_logit, newdata = spam_test, type='response')
+spam_nb_predict <- predict(spam_nb, newdata=spam_test)
+```
+
+```{R}
+spam_logit_predict_value <- as.factor( ifelse(spam_logit_predict > 0.5, 1, 0))
+```
+
+```{R}
+logit_error <- sum(spam_logit_predict_value!=spam_test$V58)/nrow(spam_test)
+nb_error <- sum(spam_nb_predict$class != spam_test$V58) / nrow(spam_test)
+```
+
+```{R}
+logit_cm <- table(spam_logit_predict_value, spam_test$V58)
+nb_cm <- table(spam_nb_predict$class, spam_test$V58)
+```
+
+```{R}
+logit_error
+```
+```{R}
+nb_error
+```
+```{R}
+logit_cm
+```
+```{R}
+nb_cm
+```
+- 나이브 베이즈는 각 변수들이 독립적임을 가정한다.
+- 결과가 저렇게 나왔다는건 단어의 빈도나 특수문자 등의 특성이 서로 독립적이지 않다.
+- 즉, 어떤 단어나 특수문자가 메일에서 사용될 때, 다른 단어나 특수문자와 상관없이
+- 쓰인다는 생각은 잘 안들죠?
+
+# 차원의 저주
+- 차원이 높으면 높을 수록 정확도는 능가하지만 오히려, 예측력이 낮아지는 문제가 발생
+- 모수의 차원, 자료의 차원, 모형의 복잡성
+- 쉽게 얘기하자면, 변수가 늘어나면(차원이 증가) 정확도는 증가
+  - 모델이 복잡하면 복잡할수록 정확도는 증가
+- 대신에 예측 정확도는 떨어질 수 있다.(과적합)
+- 사실 어려운 문제다
+  - 변수를 너무 적게 써도 문제(과소적합)
+  - 변수를 너무 많이 써도 문제(과적합)
+  - 모수를 너무 적게 써도 문제
+  - 모수를 너무 많이 써도 문제
+
+# 문제를 해결하는 방법
+1. 데이터의 수를 늘리는 방법
+2. 차원의 수를 줄이는 방법(변수 선택법)
+  - 너무 많지도, 너무 적지도 않은 적절한 변수를 선택해서 사용
+  - 이 과정에서 어느 정도의 손실은 감안하여, Y에 영향을 가장 많이 미치는 적정 수의 변수를 골라내는 작업
+  - 이 과정에서 자료를 잘 설명하는 적당한 다항식의 차수도 같이 확인 가능
+  - 즉, 모든 변수의 1-n개 까지의 모든 변수의 조합을 다 확인해봐야 가능(현실적으로 불가능)
+  
+  
+[실습]
+```{R}
+x <- c(0.923, 0.773, 1.657, 0.169, 1.406, 1.451, 2.437, 1.111, 1.64, 0.511, 1.875, 2.646, 0.841, 1.195, 2.288, 2.007)
+y <- c(-0.884, -0.432, 2.042, 1.336, 0.698, 1.802, 7.757, 0.119, 1.478, 0.74, 2.258, 12.09, -0.521, 1.074, 6.524, 4.823)
+toydata <- data.frame(x = x, y = y)
+```
+
+```{R}
+ggplot(data = toydata, aes(x=x, y=y)) +
+  geom_point()
+```
+- R에서는 lm()함수를 이용해서 선형회귀를 적합해볼 수 있다.
+```{R}
+toydata$x2 <- x^2
+toydata$x3 <- x^3
+toydata$x4 <- x^4
+toydata$x5 <- x^5
+toydata$x6 <- x^6
+toydata$x7 <- x^7
+toydata$x8 <- x^8
+toydata$x9 <- x^9
+toydata$x10 <- x^10
+
+toylm <-lm(y ~ ., data=toydata)
+beta <- toylm$coefficients
+
+toyf <- function(t) {
+  return( sum(beta * c(1, t, t^2, t^3, t^4, t^5, t^6, t^7, t^8, t^9, t^10)))
+}
+
+toyf <- Vectorize(toyf)
+
+ggplot(data = toydata, aes(x=x, y=y)) +
+  geom_point() +
+  #geom_abline(intercept = beta[1], slope = beta[2]) +
+  stat_function(aes(col='dim15'), fun=toyf)
+```
+
+# 프로그래밍 언어
+- 개발 패러다임
+
+## 1세대 언어
+- 시대별로 임의로 나눠 보자.
+- 기계어를 제외하고, 컴파일러가 본격적으로 등장한 시기부터를 1세대로 구분을 해본다.
+- 코볼(세계최초의 여성프로그래머에 의해서 처음으로 고안됨), 포트란, C, algol, lisp ...
+- 언어들의 특징: 절차적 언어(절차: procedure)
+  - 프로시저를 해석해보자면 함수 정도로 생각을 해볼 수 있다.
+  - 함수를 명령어로 해석
+- 코드의 기준이 함수 -> 함수 이름은 동사를 많이 사용
+  - get, set
+- 변수는 명사를 많이 사용
+- 프로그래밍의 기준이 함수를 기준으로 하다보니 주체가 되는 변수,
+- 주체에 대한 엑션(함수)
+```
+예)정렬 sort(array)
+```
+## 2세대 언어
+- 자바, C++, 파이썬, ...
+- 객체지향언어
+- 동사인 함수를 기준으로 코드를 작성하지 않고 객체가 되는 명사를 기준으로 코드를 작성한다.
+```
+array.sort()
+```
+- 사고방식의 차이
+- 객체지향 까지는 그래도 기본적인 문법이나 이런게 크게 달라지진 않는다.
+- 다만 객체에 대한 이해를 하기가 쉽지 않다.
+- 지금 사용하고 있는 분법들은 튜링구조를 따른다고 볼 수 있다.
+
+## 3세대 언어
+- 요새 나온건 아니지만(원래 있었던 언어들이고, 개발방법론인데) 묻혀 있다고 현대에 들어서 각광받기 시작하고 있다.
+- 이미 많이 사용도 되고 있고, 앞으로는 더 많이 사용될걸로 예상이 된다.
+- 개발 선진국에서는 이미 도입되어서 현장에서 많이 쓰이고 있다.
+- 단지 우리나라에 들어오는게 조금 늦음.
+- 현재 대학교에서는 교수님들이 이런 내용을 가르치려고 하는 중이다.
+- 하스켈, 클로져
+- 개인적인 생각인데 언젠가 들어온다.
+- 함수형 언어
+- 반복문이 없다는 점이 가장 큰 특징이다.
+- 예) 파이썬의 map()
+
+> 파이썬이나 R같은 경우는 거의 대부분의 문법을 지원하는 형태로 발전
+
+```{R}
+x <- c(0.923, 0.773, 1.657, 0.169, 1.406, 1.451, 2.437, 1.111, 1.64, 0.511, 1.875, 2.646, 0.841, 1.195, 2.288, 2.007)
+y <- c(-0.884, -0.432, 2.042, 1.336, 0.698, 1.802, 7.757, 0.119, 1.478, 0.74, 2.258, 12.09, -0.521, 1.074, 6.524, 4.823)
+
+toydata <- data.frame(y = y, x = x, x2=x^2, x3=x^3,
+                      x4=x^4, x5=x^5, x6=x^6,
+                      x7=x^7, x8=x^8, x9=x^9,
+                      x10 = x^10, x11=x^11, x12=x^12, x13=x^13, x14=x^14, x15=x^15)
+
+toylm <- lm(y ~ ., data=toydata)
+```
+
+```{R}
+beta <- toylm$coefficients
+
+toyf <- function(t) {
+  return( predict(toylm, newdata = data.frame(x=t, x2=t^2, x3=t^3, x4=t^4, x5=t^5, x6=t^6,
+                                              x7=t^7, x8=x^8, x9=x^9,
+                                              x10=x^10, x11=x^11, x12=x^12, x13=x^13, x14=x^14, x15=t^15)))
+}
+
+ggplot(data = toydata, aes(x=x, y=y)) +
+  geom_point() +
+  stat_function(aes(col='dim15'), fun=toyf)
+```
+- 훈련자료에 길들어진 전형적인 모형, overfit(과적합)
+```{R}
+# library(MASS)
+data(Boston)
+Boston # sample data
+```
+- 기존의 데이터에 추정을 방해하는 10개의 칼럼을 임의로 추가
+
+```{R}
+set.seed(100)
+train_size <- round(nrow(Boston)*0.8)
+train_index <- sample(1:nrow(Boston), train_size, replace=FALSE)
+Boston_train <- Boston[train_index,]
+Boston_test <- Boston[-train_index,]
+Boston_train
+```
+
+```{R}
+set.seed(100)
+boston_nr <- nrow(Boston)
+ran_num <- 10
+ranmat <- matrix(rnorm(boston_nr * ran_num, 0, 1), boston_nr, ran_num)
+colnames(ranmat) <- paste0('ran', 1:ran_num)
+Boston <- cbind(Boston, ranmat)
+Boston
+```
+
+## R에서는 step()함수를 통해서 자동으로 변수를 선택하는 함수를 지원
+- 전진선택법
+  - 아무런 변수도 없는 모형에서 시작
+  - 하나만 추가해도 점수가 낮아지는 변수를 모형에 추가한다.
+  - 선택되지 않은 변수들 중에서 추가했을 때, 점수가 낮아지는 변수를 모형에 추가
+  - 기존에 선택되 변수가 다시 제거되지 않는다(단점) _ Q.항상 최적의 조합인가?ㅇ
+- 후진선택법
+  - 전진선택법과는 반대의 개념으로 이해
+  - 전체 모든 변수를 선택한 상태에서 시작
+  - 하나만 제거해도 점수가 낮아지는 변수를 모형에서 제거
+  - 선택된 변수들 중에서 제거했을 때, 점수가 낮아지는 변수를 모형에서 제거
+- 단계적 회귀법
+
+$$
+  AIC = -2log-likelihood + 2p
+$$
+- -2log-likelhood는 최대가능도 추정으로 - 모형의 적합도를 나타낸다.
+- +2p의 p는 변수의 갯수 `penalty`
+  - 모형을 적합하는데 변수를 많이 사용하면 할 수록 패널티를 부여
+- 즉, 변수를 많이 선택하면 할 수록 점수가 높아지는 방식
+  - 점수가 낮으면 낮을수록 좋은 모형이다.
+
+# Boston Housing Dataset
+- 미국 보스턴시의 주택가격을 포함한 14개의 변수
+
+- 전진선택법
+```{R}
+boston_lm_full <- lm(medv ~., data=Boston_train)
+boston_lm_min <- lm(medv ~ 1, data=Boston_train)
+boston_model <- formula(boston_lm_full)
+nvmax <- ncol(Boston_train)
+
+boston_forward <- step(boston_lm_min, scope=boston_model, direction = 'forward', nvmax=nvmax)
+boston_backward <- step(boston_lm_full, scope = boston_model, direction = 'backward', nvmax=nvmax)
+boston_stepwise <- step(boston_lm_min, scope=boston_model, dirction = 'both', nvmax=nvmax)
+```
+
+# 실습
+- 스팸데이터를 이용해서 전진선택과, 후진선택, 단계적 회귀법을 적용했을 때, 선택되는 변수들을 확인
+- 단계적 회귀를 이용해 선택된 변수를 이용해 로지스틱 회귀를 적용했을때와 전체 변수를 사용했을 때의 오분류를 확인
+
+
+```{R}
+spam = read.table('./R/spam.data')
+spam
+```
+
+```{R}
+set.seed(100)
+train_size <- nrow(spam) * 0.8
+train_index <- sample(1:nrow(spam), train_size, replace = F)
+spam_train <- spam[train_index,]
+spam_test <- spam[-train_index, ]
+```
+
+```{R}
+spam_logit <- glm(V58 ~ ., data=spam_train, family='binomial' (link = 'logit'))
+spam_logit
+```
+
+```{R}
+spam_glm_full <- glm(V58 ~ ., data=spam_train, family='binomial'(link='logit'))
+spam_glm_min <- glm(V58 ~ 1, data=spam_train, family='binomial'(link = 'logit'))
+spam_model <- formula(spam_glm_full)
+nvmax <- ncol(spam_train)
+
+spam_stepwise <- step(spam_glm_min, scope=spam_model, direction = 'both', nvmax=nvmax, trace=F)
+```
+
+
+
+
+
+

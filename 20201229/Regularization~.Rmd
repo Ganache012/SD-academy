@@ -1,0 +1,156 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+# Review
+- 지금 우리가 하고 있는 것: 과적함(overfit)
+  - 결과적으로는 주어진 데이터에 대한 효율적인 모형을 찾지 못했다 라는 얘기로 결론
+  - 차원의 저주(모수, 변수)
+  - 모형의 복잡성
+- 자료의 수를 늘리는 것
+  - 현실적으로 어려운 부분이 존재
+  - 지도학습방식을 사용하는 경우-레이블링 문제
+  - 결과적으로 사람을 늘려야 되는 문제 발생
+- 변수 선택법
+  - 모형에 주로 형향을 많이주는 변수 위주로 선택을 해서 오차를 줄이는 방법
+  - 변수가 무조건 많이 있다고 그래서 좋은 모델이 나오는건 아니라는 것
+  - 변수가 너무 많으면 모형이 복잡해지고, 과적합의 발생 확률도 높아지겠다.
+  - 반대로 변수가 너무 적어도 문제가 발생(underfit)
+  - 적당한 변수를 선택해서 모형을 만들어야 한다.
+  
+#Regularization
+- 정규화 또는 일반화 정도로 해석이 된다.
+- 과적합을 피하기 위한 하나의 방법이다.
+- 가장 큰 특징은 모수에 제약조건을 걸어서 회귀모형을 적합
+
+
+- 선형 회귀에서 손실함수 정의하는 방법 2가지
+  - L1 Loss: Least Absolute Deviation(최소 절대, 최소절대잔차)
+$$
+  L = \sum_{i=1}^n | Y_i - \hat Y_i|
+$$
+  - 주어진 자료와 예측된 자료의 차이의 절대값의 총합
+  - L2 Loss: Least Squres Estimation(최소제곱추정)
+$$
+  L = \sum_{i=1}^n (Y_i - \hat Y_i)^2
+$$
+  - 주어진 자료와 예측된 자료의 차이의 제곱의 총합
+
+- norm(노름)
+  - 벡터의 길이를 구하는 방식
+  
+
+## L1 regularization
+- 절대값 이용
+- L1 norm
+$$
+  L1 = ||\beta||_1 = \sum_{i=1}^p|\beta_i|
+$$
+- 절대값의 총합
+
+## L2 regularization
+- 제곱 사용
+- L2 norm
+$$
+  L2 = ||\beta||_2 = \left(\sum_{i=1}^p \beta_i^2\right)^{1/2}
+$$
+
+## 정규화의 기본 아이디어
+- 일반식에 패널티를 주는 방식으로 정규화를 진행한다고 보면 된다.
+- 결국 모수에 제약조건을 추가하는 것은 모수에 대한 패널티를 의미한다.
+- 람다의 값에 따라서 패널티를 극대화 하거나 패널티를 아예 적용하지 않을수도 있다.
+  - 람다가 0이라면?
+  - 혹은 람다가 무한히 증가한다면?
+  
+## Ridge Regression
+- L2 norm 사용
+- 회귀계수가 축소되는 성향이 있다.
+- 다중공선성 제거하는데 효과적으로 사용될 수 있다.
+  - 입력변수 x들에 대해서 서로 독립적임을 가정한다.
+  - 독립적이지 않으면 일단 예측력이 떨어지고, 심지어는 모형이 제대로 적합하지 않는 경우도 발생한다.
+  - 상관계수가 높은 변수들에 대해서는 제거를 해주는 등의 작업이 필요하다
+  
+```{R}
+library(glmnet)
+data(Boston)
+boston_ridge <- glmnet(x = as.matrix(Boston_train[,-14]), y=Boston_train[,14], alpha=0, lambda=1)
+```
+
+```{R}
+#lambda 값을 입력하지 않으면 자동으로 할당된다
+boston_ridge <- glmnet(x = as.matrix(Boston_train[,-14]), y=Boston_train[,14], alpha=0)
+plot(boston_ridge, xvar='lambda')
+```
+-lambda 자동 결정
+```{R}
+library(caret)
+library(cvTools)
+cv.ridge = cv.glmnet(x = as.matrix(Boston_train[,-14]), y=Boston_train[,14], alpha=0)
+bestRidge = cv.ridge$lambda.min
+bestRidge
+```
+```{R}
+boston_ridge <- glmnet(x=as.matrix(Boston_train[,-14]), y=Boston_train[,14], alpha=0)
+```
+
+- alpha는 ridge regression인 경우에는 0
+- lasso는 1
+- 전진선택법, 후진선택법, 
+
+```{R}
+set.seed(100)
+train_size <- round(nrow(Boston)*0.8)
+train_index <- sample(1:nrow(Boston), train_size, replace=FALSE)
+Boston_train <- Boston[train_index,]
+Boston_test <- Boston[-train_index,]
+Boston_train
+```
+
+```{R}
+set.seed(100)
+boston_nr <- nrow(Boston)
+ran_num <- 10
+ranmat <- matrix(rnorm(boston_nr * ran_num, 0, 1), boston_nr, ran_num)
+colnames(ranmat) <- paste0('ran', 1:ran_num)
+Boston <- cbind(Boston, ranmat)
+Boston
+```
+
+
+## Lasso Regression
+- L1 norm 사용
+```{R}
+boston_lasso <- glmnet(x = as.matrix(Boston_train[,-14]), y=Boston_train[,14], alpha=1)
+plot(boston_lasso, xvar='lambda')
+```
+
+- 회귀계수가 어느순간 0이되는 변수들이 발생
+  - 회귀계수가 0이 된다는건 해당 변수가 제거된것과 동일한 효과
+  - 그러다보니 자동으로 변수를 선택하는 효과가 있다.
+
+
+
+
+```{R}
+library(caret)
+library(cvTools)
+cv.lasso = cv.glmnet(x = as.matrix(Boston_train[,-14]), y=Boston_train[,14], alpha=1)
+bestLasso = cv.lasso$lambda.min
+bestLasso
+```
+
+```{R}
+boston_lasso <- glmnet(x = as.matrix(Boston_train[,-14]), y=Boston_train[,14], alpha=1, lambda=bestLasso)
+```
+
+
+
+
+
+
+
+
+
+
+
+
